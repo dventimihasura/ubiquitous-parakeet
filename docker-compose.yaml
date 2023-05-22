@@ -24,6 +24,16 @@ services:
       POSTGRES_PASSWORD: postgrespassword
     volumes:
       - ./entrypoint-initdb.d-postgres:/docker-entrypoint-initdb.d
-
-
-
+  graphql-engine:
+    image: hasura/graphql-engine:v2.15.2
+    network_mode: "host"
+    # ports:
+    #   - "8080:8080"
+    # depends_on:
+    #   - "postgres"
+    restart: always
+    environment:
+      HASURA_GRAPHQL_DATABASE_URL: postgres://hasura:password@localhost:5432/hasura
+      HASURA_GRAPHQL_ENABLE_CONSOLE: "true"
+      HASURA_GRAPHQL_DEV_MODE: "true"
+      HASURA_GRAPHQL_ENABLED_LOG_TYPES: startup, http-log, webhook-log, websocket-log, query-log
