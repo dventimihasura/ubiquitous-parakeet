@@ -1,0 +1,97 @@
+* What
+
+This repository demonstrates building a PostgreSQL Docker image with
+the Supabase Wrappers `clickhouse_fdw` foreign data wrapper for
+Clickhouse installed.  It also uses Docker Compose to run Clickhouse
+and this PostgreSQL image, with a foreign data wrapper from the latter
+pointing to the former.  This enables queries against the Clickhouse
+database to be executed from the PostgreSQL database.
+
+* Why
+
+I wanted to explore accessing Clickhouse from PostgreSQL via foreign
+data wrapper, and also expose any problems with that approach.
+
+* How
+
+It has these components:
+
+- [[file:README.org][README.org]] :: this README
+- [[file:Dockerfile][Dockerfile]] :: builds a PosgreSQL image with the ~clickhouse_fdw~
+  installed via pgx
+- [[file:docker-compose.yaml][docker-compose.yaml]] :: launches the clickhouse and postgres services
+- [[file:README.org][entrypoint-initdb.d-clickhouse]] :: SQL scripts to set up the data
+  model and sample data in clickhouse
+- [[file:README.org][entrypoint-initdb.d-postgres]] :: SQL scripts to set up the foreign
+  servers and tables in postgres
+- [[file:README.org][scratch.sql]] :: sample SQL queries that illuminate certain problems
+
+* Steps
+
+1. Check out this repository:  https://github.com/dventimihasura/ubiquitous-parakeet.git
+2. Launch the services with Docker Compose:  ~docker compose up~
+3. Connect to the postgres service and run the sample queries:  ~psql postgresql://postgres:postgrespassword@localhost:15432/postgres -c scratch.sql~
+
+* Analysis
+
+This query works.
+
+#+begin_src sql
+  select
+   ,*
+   from
+     account
+  limit 1;
+#+end_src
+
+This query does not work.
+
+#+begin_src sql
+  select
+   ,*
+   from
+     account
+  where
+   id = (select id from account limit 1);
+#+end_src
+
+It generates this error:
+
+#+begin_src sql
+ERROR:  query failed: Server error: `ERROR DB::Exception (386): DB::Exception: There is no supertype for types String, UInt8 because some of them are String/FixedString and some of them are not: while executing 'FUNCTION equals(id : 0, 0 : 4) -> equals(id, 0) UInt8 : 5'`
+DETAIL:  Wrappers
+#+end_src
+
+Moreover, the query plan for this second query appears to be wrong.
+
+#+begin_src sql
+explain
+select
+  *
+  from
+    account
+ where
+  id = (select id from account limit 1);
+#+end_src
+
+See:
+
+#+begin_src sql
+                                                                                                                    QUERY PLAN                                                                                                                   
+  -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+   Foreign Scan on account  (cost=1.00..2.00 rows=1 width=0)
+     Filter: (id = $0)
+     Wrappers: quals = [Qual { field: "id", operator: "=", value: Cell(I64(0)), use_or: false, param: Some(Param { id: 0, type_oid: 2950 }) }]
+     Wrappers: tgts = [Column { name: "id", num: 1, type_oid: 2950 }, Column { name: "name", num: 2, type_oid: 25 }, Column { name: "created_at", num: 3, type_oid: 1114 }, Column { name: "updated_at", num: 4, type_oid: 1114 }]
+     Wrappers: sorts = []
+     Wrappers: limit = None
+     InitPlan 1 (returns $0)
+       ->  Limit  (cost=0.00..1.00 rows=1 width=0)
+             ->  Foreign Scan on account account_1  (cost=0.00..1.00 rows=1 width=0)
+                   Wrappers: quals = [Qual { field: "id", operator: "=", value: Cell(I64(0)), use_or: false, param: Some(Param { id: 0, type_oid: 2950 }) }]
+                   Wrappers: tgts = [Column { name: "id", num: 1, type_oid: 2950 }, Column { name: "name", num: 2, type_oid: 25 }, Column { name: "created_at", num: 3, type_oid: 1114 }, Column { name: "updated_at", num: 4, type_oid: 1114 }]
+                   Wrappers: sorts = []
+                   Wrappers: limit = None
+#+end_src
+
+Neither of the ~quals~ parameters should be non-empty, I believe.

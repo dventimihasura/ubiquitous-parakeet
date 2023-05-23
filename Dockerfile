@@ -19,5 +19,7 @@ RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
 RUN /home/pgx/.cargo/bin/cargo install --locked --version=0.6.1 cargo-pgx
 RUN git clone https://github.com/supabase/wrappers.git
 WORKDIR /home/pgx/wrappers/wrappers
-# RUN /home/pgx/.cargo/bin/cargo pgx init --pg14 `which pg_config`
-# RUN /home/pgx/.cargo/bin/cargo pgx install --features clickhouse_fdw
+RUN /home/pgx/.cargo/bin/cargo pgx init --pg14 `which pg_config`
+RUN /home/pgx/.cargo/bin/cargo pgx install --features clickhouse_fdw
+USER root
+WORKDIR /root

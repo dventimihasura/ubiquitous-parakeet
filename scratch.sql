@@ -7,21 +7,17 @@ select
  limit 1;
 
 explain
-
 select
-  *
+  id
   from
     account
  where
-  id = (select id from account limit 1);
+  id = (select id from account limit 1)
 
 explain
-
 select
-  account.*
+  id
   from
     account
-    join
-    "order" on account_id = account.id
- limit 1;
-
+ where
+   id = 'a0000000-6432-6463-3364-62632d616466';
