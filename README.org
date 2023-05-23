@@ -20,11 +20,11 @@ It has these components:
 - [[file:Dockerfile][Dockerfile]] :: builds a PosgreSQL image with the ~clickhouse_fdw~
   installed via pgx
 - [[file:docker-compose.yaml][docker-compose.yaml]] :: launches the clickhouse and postgres services
-- [[file:README.org][entrypoint-initdb.d-clickhouse]] :: SQL scripts to set up the data
+- [[file:entrypoint-initdb.d-clickhouse][entrypoint-initdb.d-clickhouse]] :: SQL scripts to set up the data
   model and sample data in clickhouse
-- [[file:README.org][entrypoint-initdb.d-postgres]] :: SQL scripts to set up the foreign
+- [[file:entrypoint-initdb.d-postgres][entrypoint-initdb.d-postgres]] :: SQL scripts to set up the foreign
   servers and tables in postgres
-- [[file:README.org][scratch.sql]] :: sample SQL queries that illuminate certain problems
+- [[file:scratch.sql][scratch.sql]] :: sample SQL queries that illuminate certain problems
 
 * Steps
 
