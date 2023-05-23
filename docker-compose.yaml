@@ -5,6 +5,7 @@ services:
     restart: always
     ports:
       - "19005:9005"
+      - "19000:9000"
     environment:
       CLICKHOUSE_DB: default
       CLICKHOUSE_USER: default
